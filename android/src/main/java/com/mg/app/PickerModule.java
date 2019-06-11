@@ -41,7 +41,7 @@ import cn.finalteam.rxgalleryfinal.rxbus.event.ImageRadioResultEvent;
 import cn.finalteam.rxgalleryfinal.ui.RxGalleryListener;
 import cn.finalteam.rxgalleryfinal.ui.base.IRadioImageCheckedListener;
 
-class PickerModule extends ReactContextBaseJavaModule {
+public class PickerModule extends ReactContextBaseJavaModule {
     private static final String E_ACTIVITY_DOES_NOT_EXIST = "E_ACTIVITY_DOES_NOT_EXIST";
 
     private Promise mPickerPromise;
@@ -160,22 +160,28 @@ class PickerModule extends ReactContextBaseJavaModule {
         if (path.startsWith("http://") || path.startsWith("https://")) {
             throw new Exception("Cannot select remote files");
         }
-        validateImage(path);
 
-        // if compression options are provided image will be compressed. If none options is provided,
-        // then original image will be returned
-        File compressedImage = compression.compressImage(activity, options, path);
-        String compressedImagePath = compressedImage.getPath();
-        BitmapFactory.Options options = validateImage(compressedImagePath);
+        BitmapFactory.Options opts = validateImage(path);
+        Log.e("PickerModule", opts.outMimeType);
+        String resultImagePath = path;
+        if (!("image/gif".equals(opts.outMimeType))) {//当图片不是gif时才压缩
+            // if compression options are provided image will be compressed. If none options is provided,
+            // then original image will be returned
+            Log.e("PickerModule", "进入压缩流程");
+            File compressedImage = compression.compressImage(activity, options, path);
+            String compressedImagePath = compressedImage.getPath();
+            resultImagePath = compressedImagePath;
+            opts = validateImage(compressedImagePath);
+        }
 
-        image.putString("path", "file://" + compressedImagePath);
-        image.putInt("width", options.outWidth);
-        image.putInt("height", options.outHeight);
-        image.putString("mime", options.outMimeType);
-        image.putInt("size", (int) new File(compressedImagePath).length());
+        image.putString("path", "file://" + resultImagePath);
+        image.putInt("width", opts.outWidth);
+        image.putInt("height", opts.outHeight);
+        image.putString("mime", opts.outMimeType);
+        image.putInt("size", (int) new File(resultImagePath).length());
 
         if (includeBase64) {
-            image.putString("data", getBase64StringFromFile(compressedImagePath));
+            image.putString("data", getBase64StringFromFile(resultImagePath));
         }
 
         return image;
@@ -229,6 +235,14 @@ class PickerModule extends ReactContextBaseJavaModule {
             }
         }
         rxGalleryFinal.cropHideBottomControls(this.hideCropBottomControls);
+    }
+
+    /***
+     * 设置imagePicker图片保存文件夹
+     * @param name
+     */
+    public static void setImageSavePath(String name) {
+        RxGalleryFinalApi.setImgSaveRxSDCard(name);
     }
 
     @ReactMethod
