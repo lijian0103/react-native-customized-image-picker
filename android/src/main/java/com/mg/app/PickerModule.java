@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -115,11 +116,16 @@ public class PickerModule extends ReactContextBaseJavaModule {
 
     private static String getMimeType(String url) {
         String type = null;
-        String extension = MimeTypeMap.getFileExtensionFromUrl(url);
-        if (extension != null) {
-            type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+        if (!TextUtils.isEmpty(url)) {
+            int index = url.lastIndexOf(".");
+            if (index > -1) {
+                String extType = url.substring(index);
+                String extension = MimeTypeMap.getFileExtensionFromUrl(extType);
+                if (extension != null) {
+                    type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+                }
+            }
         }
-
         return type;
     }
 
